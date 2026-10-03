@@ -13,6 +13,11 @@
       url = "git+https://gitlab.com/kaede-work/KaraS.git";
       flake = false;
     };
+
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -21,6 +26,7 @@
       nixpkgs,
       plover-flake,
       karas,
+      git-hooks,
     }:
     let
       inherit (nixpkgs) lib;
@@ -73,5 +79,15 @@
       });
 
       formatter = forEachSystem (pkgs: pkgs.nixfmt-tree);
+
+      checks = forEachSystem (pkgs: {
+        pre-commit = git-hooks.lib.${pkgs.stdenv.hostPlatform.system}.run {
+          src = ./.;
+          hooks.treefmt = {
+            enable = true;
+            packageOverrides.treefmt = pkgs.nixfmt-tree;
+          };
+        };
+      });
     };
 }
